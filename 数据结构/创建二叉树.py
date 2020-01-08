@@ -31,7 +31,9 @@ class Tree(object):
         ret = []
         queue = deque([self.root])
         while queue:
+            # print(f"queue___len__>>{queue.__len__()}")
             node = queue.popleft()
+            # print(f"====>{node.val if node else ''}, ####>{queue.__len__()}")
             if node:
                 ret.append(node.val)
                 queue.append(node.left)
