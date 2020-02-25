@@ -2,6 +2,7 @@
 def bubble_sort(alist):
 	for j in range(len(alist)-1, 0, -1):
 		for i in range(j):
+			print(f"==={j}, {i}")
 			if alist[i] > alist[i+1]:
 				alist[i], alist[i+1] = alist[i+1], alist[i]
 
