@@ -1,0 +1,44 @@
+class GzhTopHandler(BaseHandler):
+    async def get(self):
+        try:
+            openid = self.get_argument('openid', '')
+            unionid = self.get_argument('unionid', '')
+            p = self.get_argument('p', 1)
+            type = self.get_argument('type', '雷石总榜')
+        except:
+            raise utils.APIError(errcode=10001)
+        if type == '新歌榜':
+            vip_ctl = 0.8
+        else:
+            vip_ctl = 1.0
+        top_name = get_dict_key(TOP_NAMES, type)  # 由value查key
+        res = ctrl.vod_new.get_k_song_top_ctl(type)  # 从redis中查询已经存好的歌曲
+
+        if not res or not res['data']:  # 添加type为空和type为未知类型的处理
+            if type != '雷石总榜' and top_name:
+                top_info = await utilsv2.http_get_async(SONG_TOP_INFO_URL, dict(op="getkmsonglist", rname=top_name))
+                logging.error('top_info: {}'.format(top_info))
+                top_data = top_info.get('list', '')
+                if top_data:
+                    top_data = join_song_price(top_data, openid, keep_vip=vip_ctl)
+                res['top_name'] = type
+                res['data'] = top_data
+
+                ctrl.vod_new.set_k_song_top_ctl(type, res)  # 存入redis
+            else:
+                res = await utilsv2.http_get_async(SONG_TOP_HOT_URL, dict(openid=openid, unionid=unionid, p=p))
+
+        if type != '雷石总榜':
+            # 加入分页
+            p = int(p)
+            res['data'] = res['data'][(p - 1) * 10:p * 10]
+
+        self.send_json(res)
+
+
+
+
+
+def get_dict_key(dict, value):
+    key_list = [k for k, v in dict.items() if v == value]
+    return key_list[0] if key_list else key_list
